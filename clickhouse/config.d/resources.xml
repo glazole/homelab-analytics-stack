@@ -1,0 +1,5 @@
+<clickhouse>
+  <!-- Conservative memory allowance for the 15-GiB HP homelab. -->
+  <max_server_memory_usage>2147483648</max_server_memory_usage>
+  <max_concurrent_queries>4</max_concurrent_queries>
+</clickhouse>

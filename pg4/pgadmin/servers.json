@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "pg4 | Homelab",
+      "Group": "Homelab",
+      "Host": "pg4",
+      "Port": 5432,
+      "MaintenanceDB": "postgres",
+      "Username": "pg4_admin",
+      "SSLMode": "prefer"
+    }
+  }
+}

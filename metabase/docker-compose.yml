@@ -1,0 +1,37 @@
+name: homelab-metabase
+
+services:
+  metabase:
+    image: metabase/metabase:latest
+    container_name: homelab-metabase
+    hostname: metabase
+    restart: unless-stopped
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_HOST: pg4
+      MB_DB_PORT: '5432'
+      MB_DB_DBNAME: metabase
+      MB_DB_USER: metabase_app
+      MB_DB_PASS_FILE: /run/secrets/metabase_app_password
+      MB_SITE_URL: https://metabase.handyman.moscow
+      JAVA_TIMEZONE: Europe/Moscow
+      JAVA_TOOL_OPTIONS: '-Xms256m -Xmx1024m'
+    secrets:
+      - metabase_app_password
+    networks:
+      - db
+      - proxy
+    mem_limit: 1800m
+    # Dashboard access only through existing Nginx, no host port 3000.
+
+secrets:
+  metabase_app_password:
+    file: ../pg4/secrets/metabase_app_password
+
+networks:
+  db:
+    external: true
+    name: homelab-db
+  proxy:
+    external: true
+    name: outline-network

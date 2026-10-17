@@ -1,0 +1,80 @@
+name: homelab-pg4
+
+services:
+  pg4:
+    image: postgres:17
+    container_name: pg4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pg4_admin
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg4_admin_password
+      POSTGRES_DB: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: Europe/Moscow
+    secrets:
+      - pg4_admin_password
+      - metabase_app_password
+      - analytics_app_password
+      - analytics_ro_password
+    volumes:
+      - pg4-data:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    networks:
+      - db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pg4_admin -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    mem_limit: 768m
+    # Deliberately no published PostgreSQL TCP port.
+
+  pgadmin:
+    image: dpage/pgadmin4:9.17
+    container_name: homelab-pgadmin
+    user: "5050:5050"
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:?Set PGADMIN_DEFAULT_EMAIL in pg4/.env}
+      PGADMIN_DEFAULT_PASSWORD_FILE: /run/secrets/pgadmin_password
+      PGADMIN_CONFIG_PROXY_X_PROTO_COUNT: '1'
+      PGADMIN_DISABLE_POSTFIX: '1'
+    secrets:
+      - pgadmin_password
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+    networks:
+      db:
+      proxy:
+        aliases: [pgadmin]
+    depends_on:
+      pg4:
+        condition: service_healthy
+    mem_limit: 640m
+    # Nginx on outline-network routes HTTPS traffic to pgadmin:80.
+
+secrets:
+  pg4_admin_password:
+    file: ./secrets/pg4_admin_password
+  metabase_app_password:
+    file: ./secrets/metabase_app_password
+  analytics_app_password:
+    file: ./secrets/analytics_app_password
+  analytics_ro_password:
+    file: ./secrets/analytics_ro_password
+  pgadmin_password:
+    file: ./secrets/pgadmin_password
+
+volumes:
+  pg4-data:
+  pgadmin-data:
+
+networks:
+  db:
+    external: true
+    name: homelab-db
+  proxy:
+    external: true
+    name: outline-network
